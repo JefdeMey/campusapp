@@ -1,5 +1,7 @@
 package be.ucll.campusapp.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*; // Voor JPA-annotaties zoals @Entity, @Id, @ManyToOne, enz.
 import jakarta.validation.constraints.*; // Voor validatie: @NotBlank, @Positive, enz.
 
@@ -29,6 +31,8 @@ public class Lokaal {
 
     @ManyToOne // Veel lokalen kunnen bij één campus horen
     @JoinColumn(name = "campus_naam") // Foreign key in de tabel die verwijst naar Campus.naam , omdat dit PK is
+    @JsonIgnoreProperties("lokalen")
+    //@JsonBackReference
     private Campus campus;
 
     // DEFAULT CONSTRUCTOR

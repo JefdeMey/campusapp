@@ -1,5 +1,6 @@
 package be.ucll.campusapp.model;
 //IMPORTS
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*; // Importeert JPA-annotaties zoals @Entity, @Id, @OneToMany, @Transient, enz.
 import jakarta.validation.constraints.NotBlank; // Zorgt ervoor dat een String niet null of leeg mag zijn
 import jakarta.validation.constraints.Positive; // Zorgt ervoor dat een numeriek veld positief moet zijn
@@ -27,6 +28,7 @@ public class Campus {
             cascade = CascadeType.ALL, // Wijzigingen aan een campus worden ook toegepast op de bijbehorende lokalen
             orphanRemoval = true // Als een lokaal uit de lijst wordt verwijderd, wordt het ook verwijderd uit de database
     )
+    @JsonManagedReference // zorgt ervoor dat deze kant als "de hoofdstructuur" wordt gezien
     private List<Lokaal> lokalen = new ArrayList<>(); // Lijst van lokalen die bij deze campus horen
 
     // DEFAULT CONSTRUCTOR (vereist door JPA)

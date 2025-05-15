@@ -3,6 +3,7 @@ package be.ucll.campusapp.service;
 import be.ucll.campusapp.model.Campus;
 import be.ucll.campusapp.repository.CampusRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,4 +37,5 @@ public class CampusService {
     public void deleteCampus(String naam) {
         campusRepository.deleteById(naam);
     }
+
 }
