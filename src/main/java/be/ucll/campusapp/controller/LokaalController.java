@@ -48,7 +48,7 @@ public class LokaalController {
     public ResponseEntity<Lokaal> updateLokaal(@PathVariable Long id, @RequestBody Lokaal updatedLokaal) {
         Optional<Lokaal> bestaand = lokaalService.findLokaalById(id);
         if (bestaand.isPresent()) {
-            updatedLokaal.setId(id); // Zorg dat ID klopt
+            updatedLokaal.setId(id);
             return ResponseEntity.ok(lokaalService.saveLokaal(updatedLokaal));
         } else {
             return ResponseEntity.notFound().build();

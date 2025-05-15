@@ -31,8 +31,9 @@ public class Lokaal {
 
     @ManyToOne // Veel lokalen kunnen bij één campus horen
     @JoinColumn(name = "campus_naam") // Foreign key in de tabel die verwijst naar Campus.naam , omdat dit PK is
-    @JsonIgnoreProperties("lokalen")
-    //@JsonBackReference
+
+    //@JsonIgnoreProperties("lokalen")
+    @JsonBackReference
     private Campus campus;
 
     // DEFAULT CONSTRUCTOR
