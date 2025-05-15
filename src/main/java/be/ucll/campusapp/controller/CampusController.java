@@ -43,5 +43,19 @@ public class CampusController {
         campusService.deleteCampus(naam);
         return ResponseEntity.noContent().build();
     }
+    // PUT /campussen/{naam}
+    @PutMapping("/{naam}")
+    public ResponseEntity<Campus> updateCampus(@PathVariable String naam, @RequestBody Campus updatedCampus) {
+        return campusService.findCampusByNaam(naam)
+                .map(existingCampus -> {
+                    existingCampus.setAdres(updatedCampus.getAdres());
+                    existingCampus.setAantalParkeerplaatsen(updatedCampus.getAantalParkeerplaatsen());
+                    // voeg hier eventueel meer velden toe als je dat later hebt
+                    Campus saved = campusService.saveCampus(existingCampus);
+                    return ResponseEntity.ok(saved);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
 }
 
