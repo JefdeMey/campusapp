@@ -5,6 +5,7 @@ import be.ucll.campusapp.repository.CampusRepository;
 import be.ucll.campusapp.repository.LokaalRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +60,13 @@ public class LokaalService {
     public Lokaal getLokaalByIdOrThrow(Long id) {
         return lokaalRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Lokaal met ID " + id + " werd niet gevonden."));
+    }
+    //extra filters
+    public List<Lokaal> findLokalenByCampusNaam(String campusNaam) {
+        return lokaalRepository.findByCampus_Naam(campusNaam);
+    }
+    public List<Lokaal> findLokalenByVerdiepingAndCampus(int verdieping, String campusNaam) {
+        return lokaalRepository.findByVerdiepingAndCampus_Naam(verdieping, campusNaam);
     }
 }
 

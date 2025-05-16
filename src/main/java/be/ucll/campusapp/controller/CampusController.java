@@ -7,10 +7,13 @@ import be.ucll.campusapp.service.CampusService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
 import java.util.Optional;
 
+@Tag(name = "Campussen", description = "Beheer van campussen")
 @RestController // Maakt van deze klasse een REST-controller
 @RequestMapping("/campussen") // Basis-URL voor deze controller
 public class CampusController {
@@ -22,12 +25,14 @@ public class CampusController {
     }
 
     // GET /campussen
+    @Operation(summary = "Toon alle campussen")
     @GetMapping
     public List<Campus> getAllCampussen() {
         return campusService.findAllCampussen();
     }
 
     // GET /campussen/{naam}
+    @Operation(summary = "Toon één campus")
     @GetMapping("/{naam}")
     public ResponseEntity<Campus> getCampusByNaam(@PathVariable String naam) {
         Optional<Campus> campus = campusService.findCampusByNaam(naam);
@@ -40,6 +45,7 @@ public class CampusController {
     }
 
     // POST /campussen
+    @Operation(summary = "Creëer een campus")
     @PostMapping
     public ResponseEntity<Campus> addCampus(@Valid @RequestBody Campus campus) {
         Campus saved = campusService.saveCampus(campus);
@@ -47,12 +53,14 @@ public class CampusController {
     }
 
     // DELETE /campussen/{naam}
+    @Operation(summary = "Verwijder een campus op basis van een naam")
     @DeleteMapping("/{naam}")
     public ResponseEntity<Void> deleteCampus(@PathVariable String naam) {
         campusService.deleteCampus(naam);
         return ResponseEntity.noContent().build();
     }
     // PUT /campussen/{naam}
+    @Operation(summary = "Pas een campus aan op basis van naam")
     @PutMapping("/{naam}")
     public ResponseEntity<Campus> updateCampus(@PathVariable String naam, @Valid @RequestBody CampusUpdateDTO dto) {
         return campusService.findCampusByNaam(naam)

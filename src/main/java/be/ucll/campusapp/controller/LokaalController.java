@@ -4,6 +4,7 @@ import be.ucll.campusapp.dto.LokaalUpdateDTO;
 import be.ucll.campusapp.exception.EntityNotFoundException;
 import be.ucll.campusapp.model.Lokaal;
 import be.ucll.campusapp.service.LokaalService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
@@ -23,12 +24,14 @@ public class LokaalController {
     }
 
     // GET /lokalen
+    @Operation(summary="Toon alle lokalen")
     @GetMapping
     public List<Lokaal> getAllLokalen() {
         return lokaalService.findAllLokalen();
     }
 
     // GET /lokalen/{id}
+    @Operation(summary="Toon één lokaal")
     @GetMapping("/{id}")
     public ResponseEntity<Lokaal> getLokaalById(@PathVariable Long id) {
         Optional<Lokaal> lokaal = lokaalService.findLokaalById(id);
@@ -39,6 +42,7 @@ public class LokaalController {
     }
 
     // POST /lokalen
+    @Operation(summary="Creëer een lokaal")
     @PostMapping
     public ResponseEntity<Lokaal> addLokaal(@Valid @RequestBody Lokaal lokaal) {
         Lokaal savedLokaal = lokaalService.saveLokaal(lokaal);
@@ -46,12 +50,14 @@ public class LokaalController {
     }
 
     // DELETE /lokalen/{id}
+    @Operation(summary="Verwijder een lokaal op basis van id")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLokaal(@PathVariable Long id) {
         lokaalService.deleteLokaal(id);
         return ResponseEntity.noContent().build();
     }
     @PutMapping("/{id}")
+    @Operation(summary="Pas een lokaal aan op basis van id")
     public ResponseEntity<Lokaal> updateLokaal(@PathVariable Long id, @Valid @RequestBody LokaalUpdateDTO dto) {
         return lokaalService.findLokaalById(id)
                 .map(bestaand -> {
@@ -65,5 +71,16 @@ public class LokaalController {
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    //Extra filters
+    @GetMapping("/campus/{naam}")
+    public List<Lokaal> getLokalenByCampusNaam(@PathVariable String naam) {
+        return lokaalService.findLokalenByCampusNaam(naam);
+    }
+    @GetMapping("/verdieping/{verdieping}/campus/{campusNaam}")
+    public List<Lokaal> getLokalenByVerdiepingAndCampus(@PathVariable int verdieping, @PathVariable String campusNaam) {
+        return lokaalService.findLokalenByVerdiepingAndCampus(verdieping, campusNaam);
+    }
+
+
 }
 
