@@ -15,12 +15,13 @@ import java.util.List;
 public class Campus {
 
     @Id // Duidt aan dat 'naam' de primaire sleutel is (unieke identificatie in de database)
+    @NotBlank(message="Naam mag niet leeg zijn!")
     private String naam;
 
-    @NotBlank
+    @NotBlank(message="Adres mag niet leeg zijn!")
     private String adres;
 
-    @PositiveOrZero
+    @PositiveOrZero(message="aantal parkeerplaatsen kan niet negatief zijn!")
     private int aantalParkeerplaatsen;
 
     @OneToMany( // Een campus heeft meerdere lokalen (1-n relatie)

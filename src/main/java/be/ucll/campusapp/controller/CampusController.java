@@ -1,11 +1,15 @@
 package be.ucll.campusapp.controller;
 
+import be.ucll.campusapp.dto.CampusUpdateDTO;
+import be.ucll.campusapp.exception.EntityNotFoundException;
 import be.ucll.campusapp.model.Campus;
 import be.ucll.campusapp.service.CampusService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController // Maakt van deze klasse een REST-controller
 @RequestMapping("/campussen") // Basis-URL voor deze controller
@@ -26,15 +30,20 @@ public class CampusController {
     // GET /campussen/{naam}
     @GetMapping("/{naam}")
     public ResponseEntity<Campus> getCampusByNaam(@PathVariable String naam) {
-        return campusService.findCampusByNaam(naam)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Optional<Campus> campus = campusService.findCampusByNaam(naam);
+
+        if (campus.isEmpty()) {
+            throw new EntityNotFoundException("Campus '" + naam + "' werd niet gevonden.");
+        }
+
+        return ResponseEntity.ok(campus.get());
     }
 
     // POST /campussen
     @PostMapping
-    public Campus addCampus(@RequestBody Campus campus) {
-        return campusService.saveCampus(campus);
+    public ResponseEntity<Campus> addCampus(@Valid @RequestBody Campus campus) {
+        Campus saved = campusService.saveCampus(campus);
+        return ResponseEntity.ok(saved);
     }
 
     // DELETE /campussen/{naam}
@@ -45,11 +54,11 @@ public class CampusController {
     }
     // PUT /campussen/{naam}
     @PutMapping("/{naam}")
-    public ResponseEntity<Campus> updateCampus(@PathVariable String naam, @RequestBody Campus updatedCampus) {
+    public ResponseEntity<Campus> updateCampus(@PathVariable String naam, @Valid @RequestBody CampusUpdateDTO dto) {
         return campusService.findCampusByNaam(naam)
                 .map(existingCampus -> {
-                    existingCampus.setAdres(updatedCampus.getAdres());
-                    existingCampus.setAantalParkeerplaatsen(updatedCampus.getAantalParkeerplaatsen());
+                    existingCampus.setAdres(dto.getAdres());
+                    existingCampus.setAantalParkeerplaatsen(dto.getAantalParkeerplaatsen());
                     // voeg hier eventueel meer velden toe als je dat later hebt
                     Campus saved = campusService.saveCampus(existingCampus);
                     return ResponseEntity.ok(saved);

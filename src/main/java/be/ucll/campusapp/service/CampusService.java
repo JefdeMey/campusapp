@@ -1,5 +1,6 @@
 package be.ucll.campusapp.service;
 
+import be.ucll.campusapp.exception.EntityNotFoundException;
 import be.ucll.campusapp.model.Campus;
 import be.ucll.campusapp.repository.CampusRepository;
 import org.springframework.stereotype.Service;
@@ -38,4 +39,8 @@ public class CampusService {
         campusRepository.deleteById(naam);
     }
 
+    public Campus getCampusByNaamOrThrow(String naam) {
+        return campusRepository.findById(naam)
+                .orElseThrow(() -> new EntityNotFoundException("Campus '" + naam + "' werd niet gevonden."));
+    }
 }

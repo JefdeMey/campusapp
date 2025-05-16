@@ -1,7 +1,11 @@
 package be.ucll.campusapp.controller;
 
+import be.ucll.campusapp.dto.LokaalUpdateDTO;
+import be.ucll.campusapp.exception.EntityNotFoundException;
 import be.ucll.campusapp.model.Lokaal;
 import be.ucll.campusapp.service.LokaalService;
+import jakarta.validation.Valid;
+import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,14 +32,17 @@ public class LokaalController {
     @GetMapping("/{id}")
     public ResponseEntity<Lokaal> getLokaalById(@PathVariable Long id) {
         Optional<Lokaal> lokaal = lokaalService.findLokaalById(id);
-        return lokaal.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        if(lokaal.isEmpty()) {
+            throw new EntityNotFoundException("Lokaal met ID " + id + " werd niet gevonden.");
+        }
+        return ResponseEntity.ok(lokaal.get());
     }
 
     // POST /lokalen
     @PostMapping
-    public Lokaal addLokaal(@RequestBody Lokaal lokaal) {
-        return lokaalService.saveLokaal(lokaal);
+    public ResponseEntity<Lokaal> addLokaal(@Valid @RequestBody Lokaal lokaal) {
+        Lokaal savedLokaal = lokaalService.saveLokaal(lokaal);
+        return ResponseEntity.ok(savedLokaal);
     }
 
     // DELETE /lokalen/{id}
@@ -45,14 +52,18 @@ public class LokaalController {
         return ResponseEntity.noContent().build();
     }
     @PutMapping("/{id}")
-    public ResponseEntity<Lokaal> updateLokaal(@PathVariable Long id, @RequestBody Lokaal updatedLokaal) {
-        Optional<Lokaal> bestaand = lokaalService.findLokaalById(id);
-        if (bestaand.isPresent()) {
-            updatedLokaal.setId(id);
-            return ResponseEntity.ok(lokaalService.saveLokaal(updatedLokaal));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Lokaal> updateLokaal(@PathVariable Long id, @Valid @RequestBody LokaalUpdateDTO dto) {
+        return lokaalService.findLokaalById(id)
+                .map(bestaand -> {
+                    bestaand.setNaam(dto.getNaam());
+                    bestaand.setType(dto.getType());
+                    bestaand.setAantalPersonen(dto.getAantalPersonen());
+                    bestaand.setVoornaam(dto.getVoornaam());
+                    bestaand.setAchternaam(dto.getAchternaam());
+                    bestaand.setVerdieping(dto.getVerdieping());
+                    return ResponseEntity.ok(lokaalService.saveLokaal(bestaand));
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
 

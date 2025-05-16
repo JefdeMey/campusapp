@@ -12,19 +12,19 @@ public class Lokaal {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Laat de database automatisch een uniek ID genereren
     private Long id;
 
-    @NotBlank // Validatie: mag niet leeg of null zijn
+    @NotBlank (message="Naam mag niet leeg zijn!") // Validatie: mag niet leeg of null zijn
     private String naam;
 
-    @NotBlank
+    @NotBlank (message="Type mag niet leeg zijn!")
     private String type;
 
-    @PositiveOrZero // Mag 0 zijn, of positief (bv. computerlokaal zonder stoelen is OK)
+    @Positive (message="Het aantal personen dat in de ruimte kan, moet altijd meer dan 0 zijn.") // Mag 0 zijn, of positief (bv. computerlokaal zonder stoelen is OK)
     private int aantalPersonen;
 
-    @NotBlank
+    @NotBlank (message="Voornaam verantwoordelijke mag niet leeg zijn!")
     private String voornaam;
 
-    @NotBlank
+    @NotBlank (message="Achternaam verantwoordelijke mag niet leeg zijn!")
     private String achternaam;
 
     private int verdieping; // Geen validatie: mag ook negatief zijn (bv. -1 = kelder)
