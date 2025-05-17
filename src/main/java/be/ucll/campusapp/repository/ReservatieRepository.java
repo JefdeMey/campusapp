@@ -8,15 +8,15 @@ import java.util.List;
 
 public interface ReservatieRepository extends JpaRepository<Reservatie, Long> {
 
-    // Optioneel: alle reservaties voor een specifiek lokaal
-    List<Reservatie> findByLokaal_Id(Long lokaalId);
+    List<Reservatie> findByLokalen_Id(Long lokaalId);
+
 
     // Optioneel: alle reservaties voor een specifieke gebruiker
     List<Reservatie> findByGebruiker_Id(Long gebruikerId);
 
     // Optioneel: alle reservaties op een bepaald moment (bijv. voor overlapcontrole)
-    List<Reservatie> findByLokaal_IdAndStartTijdLessThanEqualAndEindTijdGreaterThanEqual(
-            Long lokaalId, LocalDateTime eindTijd, LocalDateTime startTijd
+    List<Reservatie> findByLokalen_IdAndStartTijdLessThanEqualAndEindTijdGreaterThanEqual(
+            Long lokaalId, LocalDateTime eind, LocalDateTime start
     );
 }
 

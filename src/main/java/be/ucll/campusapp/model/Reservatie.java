@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class Reservatie {
@@ -12,14 +14,6 @@ public class Reservatie {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id")
-    private User gebruiker;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "lokaal_id")
-    private Lokaal lokaal;
 
     @NotNull(message = "Starttijd is verplicht")
     @Future(message = "Starttijd moet in de toekomst liggen")
@@ -29,56 +23,52 @@ public class Reservatie {
     @Future(message = "Eindtijd moet in de toekomst liggen")
     private LocalDateTime eindTijd;
 
-    public Reservatie() {
-    }
+    private String commentaar;
 
-    public Reservatie(User gebruiker, Lokaal lokaal, LocalDateTime startTijd, LocalDateTime eindTijd) {
-        this.gebruiker = gebruiker;
-        this.lokaal = lokaal;
+    private int aantalPersonen;
+
+    @ManyToMany
+    @JoinTable(
+            name = "reservatie_lokaal",
+            joinColumns = @JoinColumn(name = "reservatie_id"),
+            inverseJoinColumns = @JoinColumn(name = "lokaal_id")
+    )
+    private Set<Lokaal> lokalen = new HashSet<>();
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "gebruiker_id")
+    private User gebruiker;
+
+    // Constructors
+    public Reservatie() {}
+
+    public Reservatie(LocalDateTime startTijd, LocalDateTime eindTijd, String commentaar, int aantalPersonen) {
         this.startTijd = startTijd;
         this.eindTijd = eindTijd;
+        this.commentaar = commentaar;
+        this.aantalPersonen = aantalPersonen;
     }
 
-    // Getters & setters
+    // Getters en setters
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public LocalDateTime getStartTijd() { return startTijd; }
+    public void setStartTijd(LocalDateTime startTijd) { this.startTijd = startTijd; }
 
-    public User getGebruiker() {
-        return gebruiker;
-    }
+    public LocalDateTime getEindTijd() { return eindTijd; }
+    public void setEindTijd(LocalDateTime eindTijd) { this.eindTijd = eindTijd; }
 
-    public void setGebruiker(User gebruiker) {
-        this.gebruiker = gebruiker;
-    }
+    public String getCommentaar() { return commentaar; }
+    public void setCommentaar(String commentaar) { this.commentaar = commentaar; }
 
-    public Lokaal getLokaal() {
-        return lokaal;
-    }
+    public int getAantalPersonen() { return aantalPersonen; }
+    public void setAantalPersonen(int aantalPersonen) { this.aantalPersonen = aantalPersonen; }
 
-    public void setLokaal(Lokaal lokaal) {
-        this.lokaal = lokaal;
-    }
+    public Set<Lokaal> getLokalen() { return lokalen; }
+    public void setLokalen(Set<Lokaal> lokalen) { this.lokalen = lokalen; }
 
-    public LocalDateTime getStartTijd() {
-        return startTijd;
-    }
-
-    public void setStartTijd(LocalDateTime startTijd) {
-        this.startTijd = startTijd;
-    }
-
-    public LocalDateTime getEindTijd() {
-        return eindTijd;
-    }
-
-    public void setEindTijd(LocalDateTime eindTijd) {
-        this.eindTijd = eindTijd;
-    }
+    public User getGebruiker() { return gebruiker; }
+    public void setGebruiker(User gebruiker) { this.gebruiker = gebruiker; }
 }
-

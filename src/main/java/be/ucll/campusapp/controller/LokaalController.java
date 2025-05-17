@@ -1,10 +1,13 @@
 package be.ucll.campusapp.controller;
 
 import be.ucll.campusapp.dto.LokaalUpdateDTO;
+import be.ucll.campusapp.dto.ReservatieDTO;
 import be.ucll.campusapp.exception.EntityNotFoundException;
 import be.ucll.campusapp.model.Lokaal;
 import be.ucll.campusapp.service.LokaalService;
+import be.ucll.campusapp.service.ReservatieService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
@@ -81,6 +84,28 @@ public class LokaalController {
         return lokaalService.findLokalenByVerdiepingAndCampus(verdieping, campusNaam);
     }
 
+    @Tag(name = "Reservaties per lokaal")
+    @RestController
+    @RequestMapping("/campus/{campusNaam}/rooms")
+    public class LokaalReservatieController {
+
+        private final ReservatieService reservatieService;
+
+        public LokaalReservatieController(ReservatieService reservatieService) {
+            this.reservatieService = reservatieService;
+        }
+
+        @Operation(summary = "Alle reservaties ophalen voor een lokaal")
+        @GetMapping("/{roomId}/reservaties")
+        public ResponseEntity<List<ReservatieDTO>> getReservatiesForLokaal(
+                @PathVariable String campusNaam,
+                @PathVariable Long roomId
+        ) {
+            // Extra validatie op campus optioneel
+            List<ReservatieDTO> reservaties = reservatieService.findByLokaalId(roomId);
+            return ResponseEntity.ok(reservaties);
+        }
+    }
 
 }
 

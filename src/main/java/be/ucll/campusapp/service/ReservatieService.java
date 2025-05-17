@@ -1,49 +1,151 @@
 package be.ucll.campusapp.service;
 
+import be.ucll.campusapp.dto.ReservatieCreateDTO;
+import be.ucll.campusapp.dto.ReservatieDTO;
+import be.ucll.campusapp.dto.ReservatieUpdateDTO;
+import be.ucll.campusapp.model.Lokaal;
 import be.ucll.campusapp.model.Reservatie;
+import be.ucll.campusapp.model.User;
+import be.ucll.campusapp.repository.LokaalRepository;
 import be.ucll.campusapp.repository.ReservatieRepository;
+import be.ucll.campusapp.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservatieService {
 
     private final ReservatieRepository reservatieRepository;
+    private final UserRepository userRepository;
+    private final LokaalRepository lokaalRepository;
 
-    public ReservatieService(ReservatieRepository reservatieRepository) {
+    public ReservatieService(ReservatieRepository reservatieRepository,
+                             UserRepository userRepository,
+                             LokaalRepository lokaalRepository) {
         this.reservatieRepository = reservatieRepository;
+        this.userRepository = userRepository;
+        this.lokaalRepository = lokaalRepository;
     }
 
-    // Alle reservaties
-    public List<Reservatie> findAllReservaties() {
-        return reservatieRepository.findAll();
+    public List<ReservatieDTO> getAll() {
+        return reservatieRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
-    // Één reservatie
-    public Optional<Reservatie> findById(Long id) {
-        return reservatieRepository.findById(id);
+    public Optional<ReservatieDTO> getById(Long id) {
+        return reservatieRepository.findById(id).map(this::mapToDTO);
     }
 
-    // Opslaan
-    public Reservatie saveReservatie(Reservatie reservatie) {
-        return reservatieRepository.save(reservatie);
+    public ReservatieDTO create(ReservatieCreateDTO dto) {
+        validatePeriode(dto.getStartTijd(), dto.getEindTijd());
+
+        for (Long lokaalId : dto.getLokaalIds()) {
+            List<Reservatie> overlapping = reservatieRepository
+                    .findByLokalen_IdAndStartTijdLessThanEqualAndEindTijdGreaterThanEqual(
+                            lokaalId, dto.getEindTijd(), dto.getStartTijd());
+
+            if (!overlapping.isEmpty()) {
+                throw new IllegalArgumentException("Lokaal met ID " + lokaalId + " is reeds gereserveerd in deze periode.");
+            }
+        }
+
+        User gebruiker = userRepository.findById(dto.getGebruikerId())
+                .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden"));
+
+        Set<Lokaal> lokalen = fetchLokalen(dto.getLokaalIds());
+
+        Reservatie reservatie = new Reservatie();
+        reservatie.setStartTijd(dto.getStartTijd());
+        reservatie.setEindTijd(dto.getEindTijd());
+        reservatie.setCommentaar(dto.getCommentaar());
+        reservatie.setAantalPersonen(dto.getAantalPersonen());
+        reservatie.setGebruiker(gebruiker);
+        reservatie.setLokalen(lokalen);
+
+
+
+        return mapToDTO(reservatieRepository.save(reservatie));
     }
 
-    // Verwijderen
-    public void deleteReservatie(Long id) {
+    public Optional<ReservatieDTO> update(Long id, ReservatieUpdateDTO dto) {
+        return reservatieRepository.findById(id).map(reservatie -> {
+            validatePeriode(dto.getStartTijd(), dto.getEindTijd());
+
+            Set<Lokaal> lokalen = fetchLokalen(dto.getLokaalIds());
+
+            for (Long lokaalId : dto.getLokaalIds()) {
+                List<Reservatie> overlapping = reservatieRepository
+                        .findByLokalen_IdAndStartTijdLessThanEqualAndEindTijdGreaterThanEqual(
+                                lokaalId, dto.getEindTijd(), dto.getStartTijd());
+
+                boolean overlaptAnders = overlapping.stream()
+                        .anyMatch(r -> !r.getId().equals(reservatie.getId())); // sluit huidige reservatie uit
+
+                if (overlaptAnders) {
+                    throw new IllegalArgumentException("Lokaal met ID " + lokaalId + " is reeds gereserveerd in deze periode.");
+                }
+            }
+
+            reservatie.setStartTijd(dto.getStartTijd());
+            reservatie.setEindTijd(dto.getEindTijd());
+            reservatie.setCommentaar(dto.getCommentaar());
+            reservatie.setAantalPersonen(dto.getAantalPersonen());
+            reservatie.setLokalen(lokalen);
+            // Overlapcontrole voor elk lokaal (behalve huidige reservatie zelf)
+
+            return mapToDTO(reservatieRepository.save(reservatie));
+        });
+    }
+
+    public void delete(Long id) {
         reservatieRepository.deleteById(id);
     }
 
-    // Extra: reservaties per lokaal
-    public List<Reservatie> findByLokaal(Long lokaalId) {
-        return reservatieRepository.findByLokaal_Id(lokaalId);
+    // Helper: validatie start < eind
+    private void validatePeriode(LocalDateTime start, LocalDateTime eind) {
+        if (!start.isBefore(eind)) {
+            throw new IllegalArgumentException("Starttijd moet vóór de eindtijd liggen.");
+        }
     }
 
-    // Extra: reservaties per gebruiker
-    public List<Reservatie> findByGebruiker(Long gebruikerId) {
-        return reservatieRepository.findByGebruiker_Id(gebruikerId);
+    // Helper: lokaalIds ophalen en mappen
+    private Set<Lokaal> fetchLokalen(List<Long> ids) {
+        List<Lokaal> lokalen = lokaalRepository.findAllById(ids);
+        if (lokalen.size() != ids.size()) {
+            throw new IllegalArgumentException("Eén of meerdere lokalen bestaan niet.");
+        }
+        return new HashSet<>(lokalen);
     }
+
+    // Mapping naar DTO
+    private ReservatieDTO mapToDTO(Reservatie r) {
+        ReservatieDTO dto = new ReservatieDTO();
+        dto.setId(r.getId());
+        dto.setStartTijd(r.getStartTijd());
+        dto.setEindTijd(r.getEindTijd());
+        dto.setCommentaar(r.getCommentaar());
+        dto.setAantalPersonen(r.getAantalPersonen());
+        dto.setGebruikerNaam(r.getGebruiker().getVoornaam() + " " + r.getGebruiker().getAchternaam());
+        dto.setLokaalNamen(r.getLokalen().stream()
+                .map(Lokaal::getNaam)
+                .collect(Collectors.toList()));
+        return dto;
+    }
+
+    public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
+        return reservatieRepository.findByGebruiker_Id(gebruikerId).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ReservatieDTO> findByLokaalId(Long lokaalId) {
+        return reservatieRepository.findByLokalen_Id(lokaalId).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
 }
-
