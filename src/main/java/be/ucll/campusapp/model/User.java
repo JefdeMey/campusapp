@@ -1,7 +1,12 @@
 package be.ucll.campusapp.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
+
+import java.time.LocalDate;
 
 @Entity
 public class User {
@@ -15,6 +20,14 @@ public class User {
 
     @NotBlank(message = "Achternaam mag niet leeg zijn")
     private String achternaam;
+
+    @NotBlank(message = "E-mailadres is verplicht.")
+    @Email(message = "Ongeldig e-mailadres.")
+    private String mail;
+
+    @NotNull(message = "Geboortedatum is verplicht.")
+    @Past(message = "Geboortedatum moet in het verleden liggen.")
+    private LocalDate geboortedatum;
 
     // Je kunt ook loginnaam/email toevoegen als je dat wenst
 
@@ -51,5 +64,13 @@ public class User {
     public void setAchternaam(String achternaam) {
         this.achternaam = achternaam;
     }
+
+    public String getMail() { return mail; }
+
+    public void setMail(String mail) { this.mail = mail; }
+
+    public LocalDate getGeboortedatum() { return geboortedatum; }
+
+    public void setGeboortedatum(LocalDate geboortedatum) { this.geboortedatum = geboortedatum; }
 }
 

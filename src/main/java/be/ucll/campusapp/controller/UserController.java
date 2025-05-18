@@ -55,6 +55,8 @@ public class UserController {
         User user = new User();
         user.setVoornaam(dto.getVoornaam());
         user.setAchternaam(dto.getAchternaam());
+        user.setMail(dto.getMail());
+        user.setGeboortedatum(dto.getGeboortedatum());
 
         User saved = userService.saveUser(user);
         return ResponseEntity.ok(mapToDTO(saved));
@@ -68,6 +70,8 @@ public class UserController {
                 .map(existing -> {
                     existing.setVoornaam(dto.getVoornaam());
                     existing.setAchternaam(dto.getAchternaam());
+                    existing.setMail(dto.getMail());
+                    existing.setGeboortedatum(dto.getGeboortedatum());
                     User updated = userService.saveUser(existing);
                     return ResponseEntity.ok(mapToDTO(updated));
                 })
@@ -88,6 +92,8 @@ public class UserController {
         dto.setId(user.getId());
         dto.setVoornaam(user.getVoornaam());
         dto.setAchternaam(user.getAchternaam());
+        dto.setMail(user.getMail());
+        dto.setGeboortedatum(user.getGeboortedatum());
         return dto;
     }
 

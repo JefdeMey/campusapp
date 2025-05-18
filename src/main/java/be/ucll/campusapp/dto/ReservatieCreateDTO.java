@@ -2,6 +2,7 @@ package be.ucll.campusapp.dto;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ public class ReservatieCreateDTO {
     private Long gebruikerId;
 
     @NotNull(message = "Lijst van lokaal-IDs is verplicht.")
+    @NotEmpty(message = "Er moet minstens één lokaal gekozen worden.")
     private List<Long> lokaalIds;
 
     // Getters en setters

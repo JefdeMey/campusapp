@@ -3,6 +3,7 @@ package be.ucll.campusapp.service;
 import be.ucll.campusapp.dto.ReservatieCreateDTO;
 import be.ucll.campusapp.dto.ReservatieDTO;
 import be.ucll.campusapp.dto.ReservatieUpdateDTO;
+import be.ucll.campusapp.exception.EntityNotFoundException;
 import be.ucll.campusapp.model.Lokaal;
 import be.ucll.campusapp.model.Reservatie;
 import be.ucll.campusapp.model.User;
@@ -43,6 +44,11 @@ public class ReservatieService {
     public ReservatieDTO create(ReservatieCreateDTO dto) {
         validatePeriode(dto.getStartTijd(), dto.getEindTijd());
 
+        Set<Long> uniekeIds = new HashSet<>(dto.getLokaalIds());
+        if (uniekeIds.size() != dto.getLokaalIds().size()) {
+            throw new IllegalArgumentException("Een lokaal mag niet meerdere keren gekozen worden voor dezelfde reservatie.");
+        }
+
         for (Long lokaalId : dto.getLokaalIds()) {
             List<Reservatie> overlapping = reservatieRepository
                     .findByLokalen_IdAndStartTijdLessThanEqualAndEindTijdGreaterThanEqual(
@@ -66,7 +72,14 @@ public class ReservatieService {
         reservatie.setGebruiker(gebruiker);
         reservatie.setLokalen(lokalen);
 
+        int maxCapaciteit = lokalen.stream()
+                .mapToInt(Lokaal::getAantalPersonen)
+                .sum();
 
+        if (dto.getAantalPersonen() > maxCapaciteit) {
+            throw new IllegalArgumentException("Aantal personen (" + dto.getAantalPersonen() +
+                    ") overschrijdt de totale capaciteit (" + maxCapaciteit + ") van de gekozen lokalen.");
+        }
 
         return mapToDTO(reservatieRepository.save(reservatie));
     }
@@ -74,6 +87,11 @@ public class ReservatieService {
     public Optional<ReservatieDTO> update(Long id, ReservatieUpdateDTO dto) {
         return reservatieRepository.findById(id).map(reservatie -> {
             validatePeriode(dto.getStartTijd(), dto.getEindTijd());
+
+            Set<Long> uniekeIds = new HashSet<>(dto.getLokaalIds());
+            if (uniekeIds.size() != dto.getLokaalIds().size()) {
+                throw new IllegalArgumentException("Een lokaal mag niet meerdere keren gekozen worden voor dezelfde reservatie.");
+            }
 
             Set<Lokaal> lokalen = fetchLokalen(dto.getLokaalIds());
 
@@ -94,6 +112,15 @@ public class ReservatieService {
             reservatie.setEindTijd(dto.getEindTijd());
             reservatie.setCommentaar(dto.getCommentaar());
             reservatie.setAantalPersonen(dto.getAantalPersonen());
+            int maxCapaciteit = lokalen.stream()
+                    .mapToInt(Lokaal::getAantalPersonen)
+                    .sum();
+
+            if (dto.getAantalPersonen() > maxCapaciteit) {
+                throw new IllegalArgumentException("Aantal personen (" + dto.getAantalPersonen() +
+                        ") overschrijdt de totale capaciteit (" + maxCapaciteit + ") van de gekozen lokalen.");
+            }
+
             reservatie.setLokalen(lokalen);
             // Overlapcontrole voor elk lokaal (behalve huidige reservatie zelf)
 
@@ -136,16 +163,33 @@ public class ReservatieService {
         return dto;
     }
 
-    public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
-        return reservatieRepository.findByGebruiker_Id(gebruikerId).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
+//    public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
+//        return reservatieRepository.findByGebruiker_Id(gebruikerId).stream()
+//                .map(this::mapToDTO)
+//                .collect(Collectors.toList());
+//    }
+public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
+    return reservatieRepository.findByGebruiker_IdOrderByStartTijdAsc(gebruikerId).stream()
+            .map(this::mapToDTO)
+            .collect(Collectors.toList());
+}
 
     public List<ReservatieDTO> findByLokaalId(Long lokaalId) {
         return reservatieRepository.findByLokalen_Id(lokaalId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<ReservatieDTO> findByCampusAndLokaalId(String campusNaam, Long lokaalId) {
+        Lokaal lokaal = lokaalRepository.findById(lokaalId)
+                .orElseThrow(() -> new EntityNotFoundException("Lokaal niet gevonden."));
+
+        if (!lokaal.getCampus().getNaam().equalsIgnoreCase(campusNaam)) {
+            throw new IllegalArgumentException("Lokaal hoort niet bij campus " + campusNaam);
+        }
+
+        List<Reservatie> reservaties = reservatieRepository.findByLokalenContainingOrderByStartTijdAsc(lokaal);
+        return reservaties.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
 }

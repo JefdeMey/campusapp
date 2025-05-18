@@ -1,11 +1,12 @@
 package be.ucll.campusapp.service;
 
+import be.ucll.campusapp.dto.LokaalCreateDTO;
+import be.ucll.campusapp.model.Campus;
 import be.ucll.campusapp.model.Lokaal;
 import be.ucll.campusapp.repository.CampusRepository;
 import be.ucll.campusapp.repository.LokaalRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,9 +51,49 @@ public class LokaalService {
 
         return lokaalRepository.save(lokaal);
     }
+    public Lokaal create(String campusNaam, LokaalCreateDTO dto) {
+        Campus campus = campusRepository.findById(campusNaam)
+                .orElseThrow(() -> new EntityNotFoundException("Campus '" + campusNaam + "' werd niet gevonden."));
+
+        boolean bestaatAl = lokaalRepository
+                .findByCampus_NaamAndNaam(campusNaam, dto.getNaam())
+                .isPresent();
+
+        if (bestaatAl) {
+            throw new IllegalArgumentException("Lokaal met deze naam bestaat al in deze campus.");
+        }
+
+        Lokaal lokaal = new Lokaal();
+        lokaal.setNaam(dto.getNaam());
+        lokaal.setType(dto.getType());
+        lokaal.setAantalPersonen(dto.getAantalPersonen());
+        lokaal.setVoornaam(dto.getVoornaam());
+        lokaal.setAchternaam(dto.getAchternaam());
+        lokaal.setVerdieping(dto.getVerdieping());
+        lokaal.setCampus(campus);
+
+        return lokaalRepository.save(lokaal);
+    }
+    public Lokaal updateLokaal(Long id, LokaalCreateDTO dto) {
+        Lokaal lokaal = lokaalRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Lokaal met ID " + id + " werd niet gevonden."));
+
+        lokaal.setNaam(dto.getNaam());
+        lokaal.setType(dto.getType());
+        lokaal.setAantalPersonen(dto.getAantalPersonen());
+        lokaal.setVoornaam(dto.getVoornaam());
+        lokaal.setAchternaam(dto.getAchternaam());
+        lokaal.setVerdieping(dto.getVerdieping());
+
+        return lokaalRepository.save(lokaal);
+    }
+
 
     // Verwijder een lokaal
     public void deleteLokaal(Long id) {
+        if (!lokaalRepository.existsById(id)) {
+            throw new EntityNotFoundException("Lokaal met ID " + id + " werd niet gevonden.");
+        }
         lokaalRepository.deleteById(id);
     }
 

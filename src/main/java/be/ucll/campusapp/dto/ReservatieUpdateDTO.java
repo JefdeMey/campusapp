@@ -2,6 +2,7 @@ package be.ucll.campusapp.dto;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class ReservatieUpdateDTO {
     private int aantalPersonen;
 
     @NotNull(message = "Lijst van lokaal-IDs is verplicht.")
+    @NotEmpty(message="Er moet minstens 1 lokaal gekozen worden.")
     private List<Long> lokaalIds;
 
     // GebruikerId weglaten – die wordt niet aangepast bij update
