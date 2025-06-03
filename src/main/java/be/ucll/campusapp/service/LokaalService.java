@@ -6,7 +6,10 @@ import be.ucll.campusapp.model.Lokaal;
 import be.ucll.campusapp.repository.CampusRepository;
 import be.ucll.campusapp.repository.LokaalRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +54,7 @@ public class LokaalService {
 
         return lokaalRepository.save(lokaal);
     }
+
     public Lokaal create(String campusNaam, LokaalCreateDTO dto) {
         Campus campus = campusRepository.findById(campusNaam)
                 .orElseThrow(() -> new EntityNotFoundException("Campus '" + campusNaam + "' werd niet gevonden."));
@@ -74,6 +78,7 @@ public class LokaalService {
 
         return lokaalRepository.save(lokaal);
     }
+
     public Lokaal updateLokaal(Long id, LokaalCreateDTO dto) {
         Lokaal lokaal = lokaalRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Lokaal met ID " + id + " werd niet gevonden."));
@@ -88,13 +93,16 @@ public class LokaalService {
         return lokaalRepository.save(lokaal);
     }
 
-
     // Verwijder een lokaal
     public void deleteLokaal(Long id) {
         if (!lokaalRepository.existsById(id)) {
-            throw new EntityNotFoundException("Lokaal met ID " + id + " werd niet gevonden.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Lokaal met ID " + id + " bestaat niet.");
         }
-        lokaalRepository.deleteById(id);
+        try {
+            lokaalRepository.deleteById(id);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lokaal is nog gekoppeld aan andere gegevens (bijv. reservaties).");
+        }
     }
 
 
@@ -106,6 +114,7 @@ public class LokaalService {
     public List<Lokaal> findLokalenByCampusNaam(String campusNaam) {
         return lokaalRepository.findByCampus_Naam(campusNaam);
     }
+
     public List<Lokaal> findLokalenByVerdiepingAndCampus(int verdieping, String campusNaam) {
         return lokaalRepository.findByVerdiepingAndCampus_Naam(verdieping, campusNaam);
     }

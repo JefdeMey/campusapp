@@ -4,6 +4,7 @@ import be.ucll.campusapp.dto.LokaalDTO;
 import be.ucll.campusapp.dto.LokaalCreateDTO;
 import be.ucll.campusapp.exception.EntityNotFoundException;
 import be.ucll.campusapp.model.Lokaal;
+import be.ucll.campusapp.repository.LokaalRepository;
 import be.ucll.campusapp.service.LokaalService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,15 +23,18 @@ import java.util.stream.Collectors;
 public class LokaalController {
 
     private final LokaalService lokaalService;
+    private final LokaalRepository lokaalRepository;
 
-    public LokaalController(LokaalService lokaalService) {
+    public LokaalController(LokaalService lokaalService, LokaalRepository lokaalRepository) {
         this.lokaalService = lokaalService;
+        this.lokaalRepository = lokaalRepository;
     }
 
     @Operation(summary = "Toon alle lokalen")
     @GetMapping
     public List<LokaalDTO> getAllLokalen() {
-        return lokaalService.findAllLokalen().stream()
+        return lokaalService.findAllLokalen()
+                .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -41,6 +45,16 @@ public class LokaalController {
         Optional<Lokaal> lokaal = lokaalService.findLokaalById(id);
         return lokaal.map(value -> ResponseEntity.ok(mapToDTO(value)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+    @Operation(summary = "Toon lokaalid op naam")
+    @GetMapping("/naam/{naam}")
+    public ResponseEntity<Long> getIdByNaam(@PathVariable String naam) {
+        Optional<Lokaal> lokaal = lokaalRepository.findByNaam(naam);
+        if (lokaal.isPresent()) {
+            return ResponseEntity.ok(lokaal.get().getId());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @Operation(summary = "Creëer een lokaal binnen een campus")
@@ -76,6 +90,7 @@ public class LokaalController {
         dto.setVoornaam(lokaal.getVoornaam());
         dto.setAchternaam(lokaal.getAchternaam());
         dto.setVerdieping(lokaal.getVerdieping());
+        dto.setCampusNaam(lokaal.getCampus().getNaam());
         return dto;
     }
 }

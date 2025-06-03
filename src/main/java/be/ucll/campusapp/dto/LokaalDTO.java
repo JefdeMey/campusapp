@@ -8,6 +8,15 @@ public class LokaalDTO {
     private String voornaam;
     private String achternaam;
     private int verdieping;
+    private String campusNaam;
+
+    public String getCampusNaam() {
+        return campusNaam;
+    }
+
+    public void setCampusNaam(String campusNaam) {
+        this.campusNaam = campusNaam;
+    }
 
     // Getters en setters
     public Long getId() {

@@ -11,6 +11,7 @@ import be.ucll.campusapp.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -44,8 +45,9 @@ public class DataInitializer implements CommandLineRunner {
             lokaalRepository.save(l1);
             lokaalRepository.save(l2);
 
-            User u1 = new User("Alice", "Maes");
-            User u2 = new User("Bram", "Dewitte");
+            User u1 = new User("Alice", "Maes", "alice@mail.com", LocalDate.of(1990, 3, 15));
+            User u2 = new User("Bram", "Dewitte", "bram@mail.com", LocalDate.of(1988, 7, 2));
+
             userRepository.save(u1);
             userRepository.save(u2);
 

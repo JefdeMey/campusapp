@@ -1,26 +1,24 @@
-
 package be.ucll.campusapp.service;
 
+import be.ucll.campusapp.dto.LokaalCreateDTO;
 import be.ucll.campusapp.model.Campus;
 import be.ucll.campusapp.model.Lokaal;
 import be.ucll.campusapp.repository.CampusRepository;
 import be.ucll.campusapp.repository.LokaalRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-class LokaalServiceTest {
+public class LokaalServiceTest {
 
     @Mock
     private LokaalRepository lokaalRepository;
@@ -31,69 +29,108 @@ class LokaalServiceTest {
     @InjectMocks
     private LokaalService lokaalService;
 
-    private Campus campus;
-
     @BeforeEach
-    void setup() {
-        campus = new Campus("LEUVEN", "Naamsestraat", 100);
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testFindLokaalById_returnsLokaal() {
-        Lokaal lokaal = new Lokaal("1.01", "Leslokaal", 30, "Jan", "Peeters", 1, campus);
-        lokaal.setId(1L);
-        when(lokaalRepository.findById(1L)).thenReturn(Optional.of(lokaal));
-
-        Optional<Lokaal> result = lokaalService.findLokaalById(1L);
-
-        assertTrue(result.isPresent());
-        assertEquals("1.01", result.get().getNaam());
-    }
-
-    @Test
-    void testFindAllLokalen_returnsAll() {
-        Lokaal l1 = new Lokaal("1.01", "Leslokaal", 30, "Jan", "Peeters", 1, campus);
-        Lokaal l2 = new Lokaal("1.02", "PC-lokaal", 20, "Lisa", "Vermeulen", 1, campus);
-        when(lokaalRepository.findAll()).thenReturn(Arrays.asList(l1, l2));
-
+    void testFindAllLokalen() {
+        when(lokaalRepository.findAll()).thenReturn(List.of(new Lokaal(), new Lokaal()));
         List<Lokaal> result = lokaalService.findAllLokalen();
-
         assertEquals(2, result.size());
     }
 
     @Test
-    void testSaveLokaal_throwsIfCampusNotFound() {
-        Lokaal lokaal = new Lokaal("1.03", "Leslokaal", 20, "Tom", "Janssens", 2, new Campus("HASSELT", "", 0));
-        when(campusRepository.existsById("HASSELT")).thenReturn(false);
-
-        Exception ex = assertThrows(IllegalArgumentException.class, () -> lokaalService.saveLokaal(lokaal));
-        assertEquals("De opgegegeven campus HASSELT bestaat niet!", ex.getMessage());
+    void testFindLokaalById() {
+        Lokaal lokaal = new Lokaal();
+        lokaal.setId(1L);
+        when(lokaalRepository.findById(1L)).thenReturn(Optional.of(lokaal));
+        Optional<Lokaal> result = lokaalService.findLokaalById(1L);
+        assertTrue(result.isPresent());
+        assertEquals(1L, result.get().getId());
     }
 
     @Test
-    void testSaveLokaal_throwsIfDuplicateLokaalInCampus() {
-        Lokaal lokaal = new Lokaal("1.01", "Leslokaal", 25, "Jef", "De Mey", 1, campus);
-        when(campusRepository.existsById("LEUVEN")).thenReturn(true);
-        when(lokaalRepository.findByCampus_NaamAndNaam("LEUVEN", "1.01")).thenReturn(Optional.of(lokaal));
+    void testSaveLokaal_NieuwLokaalMetBestaandeNaam() {
+        Lokaal lokaal = new Lokaal();
+        Campus campus = new Campus();
+        campus.setNaam("UCLL");
+        lokaal.setCampus(campus);
+        lokaal.setNaam("A1");
 
-        Exception ex = assertThrows(IllegalArgumentException.class, () -> lokaalService.saveLokaal(lokaal));
-        assertEquals("Lokaal met deze naam bestaat al in deze campus.", ex.getMessage());
+        when(campusRepository.existsById("UCLL")).thenReturn(true);
+        when(lokaalRepository.findByCampus_NaamAndNaam("UCLL", "A1")).thenReturn(Optional.of(new Lokaal()));
+
+        assertThrows(IllegalArgumentException.class, () -> lokaalService.saveLokaal(lokaal));
     }
 
     @Test
-    void testDeleteLokaal_callsRepository() {
-        lokaalService.deleteLokaal(5L);
-        verify(lokaalRepository).deleteById(5L);
+    void testCreateLokaal_Success() {
+        Campus campus = new Campus();
+        campus.setNaam("UCLL");
+
+        LokaalCreateDTO dto = new LokaalCreateDTO();
+        dto.setNaam("A1");
+        dto.setType("Leslokaal");
+        dto.setAantalPersonen(25);
+        dto.setVoornaam("Jan");
+        dto.setAchternaam("Jansen");
+        dto.setVerdieping(1);
+
+        Lokaal expected = new Lokaal();
+        expected.setNaam("A1");
+        expected.setAantalPersonen(25);
+        expected.setCampus(campus);
+
+        when(campusRepository.findById("UCLL")).thenReturn(Optional.of(campus));
+        when(lokaalRepository.findByCampus_NaamAndNaam("UCLL", "A1")).thenReturn(Optional.empty());
+        when(lokaalRepository.save(any(Lokaal.class))).thenReturn(expected);
+
+        Lokaal result = lokaalService.create("UCLL", dto);
+
+        assertEquals("A1", result.getNaam());
+        assertEquals(25, result.getAantalPersonen());
+    }
+
+
+    @Test
+    void testUpdateLokaal_NotFound() {
+        when(lokaalRepository.findById(1L)).thenReturn(Optional.empty());
+        LokaalCreateDTO dto = new LokaalCreateDTO();
+        assertThrows(EntityNotFoundException.class, () -> lokaalService.updateLokaal(1L, dto));
     }
 
     @Test
-    void testFindLokalenByVerdiepingAndCampus_returnsFiltered() {
-        Lokaal l1 = new Lokaal("2.01", "Auditorium", 80, "Inge", "Claes", 2, campus);
-        when(lokaalRepository.findByVerdiepingAndCampus_Naam(2, "LEUVEN")).thenReturn(List.of(l1));
+    void testDeleteLokaal_Success() {
+        when(lokaalRepository.existsById(1L)).thenReturn(true);
+        lokaalService.deleteLokaal(1L);
+        verify(lokaalRepository).deleteById(1L);
+    }
 
-        List<Lokaal> result = lokaalService.findLokalenByVerdiepingAndCampus(2, "LEUVEN");
+    @Test
+    void testDeleteLokaal_NotFound() {
+        when(lokaalRepository.existsById(1L)).thenReturn(false);
+        assertThrows(EntityNotFoundException.class, () -> lokaalService.deleteLokaal(1L));
+    }
 
+    @Test
+    void testGetLokaalByIdOrThrow_NotFound() {
+        when(lokaalRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(EntityNotFoundException.class, () -> lokaalService.getLokaalByIdOrThrow(1L));
+    }
+
+    @Test
+    void testFindLokalenByCampusNaam() {
+        when(lokaalRepository.findByCampus_Naam("UCLL")).thenReturn(List.of(new Lokaal()));
+        List<Lokaal> result = lokaalService.findLokalenByCampusNaam("UCLL");
         assertEquals(1, result.size());
-        assertEquals("2.01", result.get(0).getNaam());
+    }
+
+    @Test
+    void testFindLokalenByVerdiepingAndCampus() {
+        when(lokaalRepository.findByVerdiepingAndCampus_Naam(2, "UCLL")).thenReturn(List.of(new Lokaal()));
+        List<Lokaal> result = lokaalService.findLokalenByVerdiepingAndCampus(2, "UCLL");
+        assertEquals(1, result.size());
     }
 }

@@ -1,6 +1,7 @@
 package be.ucll.campusapp.service;
 
 import be.ucll.campusapp.dto.CampusCreateDTO;
+import be.ucll.campusapp.dto.LokaalDTO;
 import be.ucll.campusapp.exception.EntityNotFoundException;
 import be.ucll.campusapp.model.Campus;
 import be.ucll.campusapp.model.Lokaal;
@@ -9,6 +10,7 @@ import be.ucll.campusapp.repository.LokaalRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PutMapping;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,8 +63,13 @@ public class CampusService {
     }
 
     // Verwijder een campus
-    public void deleteCampus(String naam) {
-        campusRepository.deleteById(naam);
+    public boolean deleteCampus(String naam) {
+        Optional<Campus> campus = campusRepository.findById(naam); // of findByNaam(naam) indien nodig
+        if (campus.isEmpty()) {
+            return false;
+        }
+        campusRepository.delete(campus.get());
+        return true;
     }
 
     public Campus getCampusByNaamOrThrow(String naam) {
@@ -80,4 +87,59 @@ public class CampusService {
 
         return lokaal;
     }
+
+    public List<LokaalDTO> findLokalenMetFilters(String campusNaam, LocalDateTime availableFrom, LocalDateTime availableUntil, Integer minNumberOfSeats) {
+        List<Lokaal> alleLokalen = lokaalRepository.findByCampus_Naam(campusNaam);
+
+        return alleLokalen.stream()
+                .filter(lokaal -> beschikbaarVanaf(lokaal, availableFrom))
+                .filter(lokaal -> beschikbaarTot(lokaal, availableUntil))
+                .filter(lokaal -> heeftMinAantalZitplaatsen(lokaal, minNumberOfSeats))
+                .map(this::mapToDTO)
+                .toList();
+    }
+    private boolean beschikbaarVanaf(Lokaal lokaal, LocalDateTime tijdstip) {
+        if (tijdstip == null) return true;
+        return lokaal.getReservaties().stream()
+                .noneMatch(r -> !r.getEindTijd().isBefore(tijdstip));
+    }
+
+    private boolean beschikbaarTot(Lokaal lokaal, LocalDateTime tijdstip) {
+        if (tijdstip == null) return true;
+        return lokaal.getReservaties().stream()
+                .noneMatch(r -> !r.getStartTijd().isAfter(tijdstip));
+    }
+
+//    private boolean beschikbaarVanaf(Lokaal lokaal, LocalDateTime tijdstip) {
+//        return lokaal.getReservaties().stream()
+//                .noneMatch(r -> !r.getEindTijd().isBefore(tijdstip));
+//    }
+//
+//    private boolean beschikbaarTot(Lokaal lokaal, LocalDateTime tijdstip) {
+//        if (tijdstip == null) return true;
+//        return lokaal.getReservaties().stream()
+//                .noneMatch(r -> !r.getStartTijd().isAfter(tijdstip));
+//    }
+
+    private boolean heeftMinAantalZitplaatsen(Lokaal lokaal, Integer minAantal) {
+        if (minAantal == null) return true;
+        return lokaal.getAantalPersonen() >= minAantal;
+    }
+
+
+    private LokaalDTO mapToDTO(Lokaal lokaal) {
+        LokaalDTO dto = new LokaalDTO();
+        dto.setId(lokaal.getId());
+        dto.setNaam(lokaal.getNaam());
+        dto.setType(lokaal.getType());
+        dto.setAantalPersonen(lokaal.getAantalPersonen());
+        dto.setVoornaam(lokaal.getVoornaam());
+        dto.setAchternaam(lokaal.getAchternaam());
+        dto.setVerdieping(lokaal.getVerdieping());
+        if (lokaal.getCampus() != null) {
+            dto.setCampusNaam(lokaal.getCampus().getNaam());
+        }
+        return dto;
+    }
+
 }

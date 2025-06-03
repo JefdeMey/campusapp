@@ -43,6 +43,13 @@ public class ReservatieController {
     @Operation(summary = "Nieuwe reservatie aanmaken")
     @PostMapping
     public ResponseEntity<ReservatieDTO> create(@Valid @RequestBody ReservatieCreateDTO dto) {
+        System.out.println("➡️ Gebruiker-ID ontvangen van client: " + dto.getGebruikerId());
+        System.out.println("🚀 Ontvangen DTO:");
+        System.out.println("Gebruiker ID: " + dto.getGebruikerId());
+        System.out.println("Aantal personen: " + dto.getAantalPersonen());
+        System.out.println("Lokalen: " + dto.getLokaalIds());
+        System.out.println("Start: " + dto.getStartTijd());
+        System.out.println("Einde: " + dto.getEindTijd());
         ReservatieDTO created = reservatieService.create(dto);
         return ResponseEntity.ok(created);
     }

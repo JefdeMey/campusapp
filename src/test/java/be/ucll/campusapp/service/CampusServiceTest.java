@@ -1,23 +1,32 @@
 package be.ucll.campusapp.service;
 
+import be.ucll.campusapp.dto.CampusCreateDTO;
+import be.ucll.campusapp.dto.LokaalDTO;
 import be.ucll.campusapp.exception.EntityNotFoundException;
 import be.ucll.campusapp.model.Campus;
+import be.ucll.campusapp.model.Lokaal;
+import be.ucll.campusapp.model.Reservatie;
 import be.ucll.campusapp.repository.CampusRepository;
+import be.ucll.campusapp.repository.LokaalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class CampusServiceTest {
+public class CampusServiceTest {
 
     @Mock
     private CampusRepository campusRepository;
+
+    @Mock
+    private LokaalRepository lokaalRepository;
 
     @InjectMocks
     private CampusService campusService;
@@ -26,109 +35,146 @@ class CampusServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
-    @Test
-    void testFindAllCampussen_returnsAllCampussen() {
-        // Arrange
-        Campus c1 = new Campus("LEUVEN", "Naamsestraat", 100);
-        Campus c2 = new Campus("HASSELT", "Elfde Liniestraat", 80);
-        when(campusRepository.findAll()).thenReturn(Arrays.asList(c1, c2));
 
-        // Act
+    @Test
+    void testCreateCampus() {
+        CampusCreateDTO dto = new CampusCreateDTO();
+        dto.setNaam("TestCampus");
+        dto.setAdres("TestStraat 1");
+        dto.setAantalParkeerPlaatsen(50);
+
+        Campus savedCampus = new Campus();
+        savedCampus.setNaam(dto.getNaam());
+        savedCampus.setAdres(dto.getAdres());
+        savedCampus.setAantalParkeerplaatsen(dto.getAantalParkeerPlaatsen());
+
+        when(campusRepository.save(any(Campus.class))).thenReturn(savedCampus);
+
+        Campus result = campusService.create(dto);
+
+        assertEquals("TestCampus", result.getNaam());
+        assertEquals("TestStraat 1", result.getAdres());
+        assertEquals(50, result.getAantalParkeerplaatsen());
+    }
+
+    @Test
+    void testUpdateCampusThrowsIfNotFound() {
+        when(campusRepository.findById("NietBestaat")).thenReturn(Optional.empty());
+
+        CampusCreateDTO dto = new CampusCreateDTO();
+        dto.setAdres("NieuwAdres");
+        dto.setAantalParkeerPlaatsen(100);
+
+        assertThrows(EntityNotFoundException.class, () -> campusService.updateCampus("NietBestaat", dto));
+    }
+
+    @Test
+    void testUpdateCampusSuccess() {
+        Campus bestaande = new Campus();
+        bestaande.setNaam("TestCampus");
+        bestaande.setAdres("OudAdres");
+        bestaande.setAantalParkeerplaatsen(30);
+
+        when(campusRepository.findById("TestCampus")).thenReturn(Optional.of(bestaande));
+        when(campusRepository.save(any(Campus.class))).thenAnswer(i -> i.getArgument(0));
+
+        CampusCreateDTO dto = new CampusCreateDTO();
+        dto.setAdres("NieuwAdres");
+        dto.setAantalParkeerPlaatsen(80);
+
+        Campus result = campusService.updateCampus("TestCampus", dto);
+
+        assertEquals("NieuwAdres", result.getAdres());
+        assertEquals(80, result.getAantalParkeerplaatsen());
+    }
+
+    @Test
+    void testFindAllCampussen() {
+        List<Campus> mockList = List.of(new Campus(), new Campus());
+        when(campusRepository.findAll()).thenReturn(mockList);
+
         List<Campus> result = campusService.findAllCampussen();
-
-        // Assert
         assertEquals(2, result.size());
-        assertEquals("LEUVEN", result.get(0).getNaam());
-        verify(campusRepository, times(1)).findAll();
     }
+
     @Test
-    void testFindCampusByNaam_geeftCampusTerugAlsDieBestaat() {
-        // Arrange
-        Campus campus = new Campus("LEUVEN", "Naamsestraat 1", 120);
-        when(campusRepository.findById("LEUVEN")).thenReturn(Optional.of(campus));
+    void testGetCampusByNaamOrThrow_Success() {
+        Campus campus = new Campus();
+        campus.setNaam("UCLL");
+        when(campusRepository.findById("UCLL")).thenReturn(Optional.of(campus));
 
-        // Act
-        Optional<Campus> resultaat = campusService.findCampusByNaam("LEUVEN");
-
-        // Assert
-        assertTrue(resultaat.isPresent());
-        assertEquals("LEUVEN", resultaat.get().getNaam());
-        verify(campusRepository).findById("LEUVEN"); // controleer of de repo werd aangesproken
+        Campus result = campusService.getCampusByNaamOrThrow("UCLL");
+        assertEquals("UCLL", result.getNaam());
     }
+
     @Test
-    void testFindCampusByNaam_returnsEmptyIfNotFound() {
-        // Arrange
-        when(campusRepository.findById("HASSELT")).thenReturn(Optional.empty());
-
-        // Act
-        Optional<Campus> result = campusService.findCampusByNaam("HASSELT");
-
-        // Assert
-        assertFalse(result.isPresent());
-        verify(campusRepository).findById("HASSELT");
+    void testGetCampusByNaamOrThrow_NotFound() {
+        when(campusRepository.findById("Fake")).thenReturn(Optional.empty());
+        assertThrows(EntityNotFoundException.class, () -> campusService.getCampusByNaamOrThrow("Fake"));
     }
+
     @Test
-    void testFindCampusByNaam_returnOptional() {
-        // Arrange
-        Campus campus = new Campus("LEUVEN", "Naamsestraat 1", 120);
-        when(campusRepository.findById("LEUVEN")).thenReturn(Optional.of(campus));
+    void testDeleteCampus() {
+        campusService.deleteCampus("UCLL");
+        verify(campusRepository).deleteById("UCLL");
+    }
 
-        // Act
-        Optional<Campus> result = campusService.findCampusByNaam("LEUVEN");
+    @Test
+    void testGetLokaalBinnenCampus_Success() {
+        Campus campus = new Campus();
+        campus.setNaam("UCLL");
 
-        // Assert
+        Lokaal lokaal = new Lokaal();
+        lokaal.setId(1L);
+        lokaal.setCampus(campus);
+
+        when(lokaalRepository.findById(1L)).thenReturn(Optional.of(lokaal));
+
+        Lokaal result = campusService.getLokaalBinnenCampus("UCLL", 1L);
+        assertEquals(1L, result.getId());
+    }
+
+    @Test
+    void testGetLokaalBinnenCampus_LokaalNotFound() {
+        when(lokaalRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(EntityNotFoundException.class, () -> campusService.getLokaalBinnenCampus("UCLL", 1L));
+    }
+
+    @Test
+    void testGetLokaalBinnenCampus_CampusMismatch() {
+        Campus andereCampus = new Campus();
+        andereCampus.setNaam("Andere");
+
+        Lokaal lokaal = new Lokaal();
+        lokaal.setId(1L);
+        lokaal.setCampus(andereCampus);
+
+        when(lokaalRepository.findById(1L)).thenReturn(Optional.of(lokaal));
+
+        assertThrows(IllegalArgumentException.class, () -> campusService.getLokaalBinnenCampus("UCLL", 1L));
+    }
+
+    @Test
+    void testFindLokalenMetFilters_enkelMinSeats() {
+        Lokaal l1 = new Lokaal(); l1.setAantalPersonen(20);
+        Lokaal l2 = new Lokaal(); l2.setAantalPersonen(10);
+        List<Lokaal> lokalen = List.of(l1, l2);
+
+        when(lokaalRepository.findByCampus_Naam("UCLL")).thenReturn(lokalen);
+
+        List<LokaalDTO> result = campusService.findLokalenMetFilters("UCLL", null, null, 15);
+        assertEquals(1, result.size());
+        assertEquals(20, result.get(0).getAantalPersonen());
+    }
+
+    @Test
+    void testFindCampusByNaam() {
+        Campus campus = new Campus();
+        campus.setNaam("Test");
+        when(campusRepository.findById("Test")).thenReturn(Optional.of(campus));
+
+        Optional<Campus> result = campusService.findCampusByNaam("Test");
         assertTrue(result.isPresent());
-        assertEquals("LEUVEN", result.get().getNaam());
-    }
-    @Test
-    void testSaveCampus_returnsSavedCampus() {
-        // Arrange
-        Campus campus = new Campus("HASSELT", "Elfde-Liniestraat 24", 50);
-        when(campusRepository.save(campus)).thenReturn(campus);
-
-        // Act
-        Campus result = campusService.saveCampus(campus);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals("HASSELT", result.getNaam());
-        verify(campusRepository, times(1)).save(campus);
-    }
-    @Test
-    void testDeleteCampus_deletesCampusById() {
-        // Act
-        campusService.deleteCampus("LEUVEN");
-
-        // Assert
-        verify(campusRepository, times(1)).deleteById("LEUVEN");
-    }
-
-    @Test
-    void testGetCampusByNaamOrThrow_returnsCampusIfExists() {
-        // Arrange
-        Campus campus = new Campus("LEUVEN", "Naamsestraat", 100);
-        when(campusRepository.findById("LEUVEN")).thenReturn(Optional.of(campus));
-
-        // Act
-        Campus result = campusService.getCampusByNaamOrThrow("LEUVEN");
-
-        // Assert
-        assertEquals("LEUVEN", result.getNaam());
-        verify(campusRepository, times(1)).findById("LEUVEN");
-    }
-
-    @Test
-    void testGetCampusByNaamOrThrow_throwsExceptionIfNotFound() {
-        // Arrange
-        when(campusRepository.findById("HASSELT")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        EntityNotFoundException thrown = assertThrows(EntityNotFoundException.class, () -> {
-            campusService.getCampusByNaamOrThrow("HASSELT");
-        });
-
-        assertEquals("Campus 'HASSELT' werd niet gevonden.", thrown.getMessage());
-        verify(campusRepository, times(1)).findById("HASSELT");
+        assertEquals("Test", result.get().getNaam());
     }
 }
-

@@ -1,50 +1,95 @@
 package be.ucll.campusapp.integration;
 
-import be.ucll.campusapp.model.Campus;
+import be.ucll.campusapp.dto.CampusCreateDTO;
 import be.ucll.campusapp.repository.CampusRepository;
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// 🔧 Laadt de volledige Spring context (services, controllers, enz.)
 @SpringBootTest
-
-// 🧪 Zorgt dat we MockMvc kunnen gebruiken om HTTP-verzoeken te simuleren
 @AutoConfigureMockMvc
-public class CampusControllerIntegrationTest {
+@ActiveProfiles("test") // gebruikt application-test.properties
+class CampusControllerIntegrationTest {
 
-    // Injecteert een MockMvc-instance om requests te testen zonder frontend
     @Autowired
     private MockMvc mockMvc;
 
-    // Injecteert het echte repository zodat we testdata kunnen voorzien
     @Autowired
     private CampusRepository campusRepository;
 
-    // 🔁 Voor elke test: database resetten en testdata aanmaken
-    @BeforeEach
-    public void setUp() {
-        campusRepository.deleteAll(); // Alle vorige data verwijderen
-        Campus testCampus = new Campus("LEUVEN", "Naamsestraat", 100); // Testcampus
-        campusRepository.save(testCampus); // Opslaan in database
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void postCampus_Returns201AndCorrectBody() throws Exception {
+        // Arrange
+        CampusCreateDTO dto = new CampusCreateDTO();
+        dto.setNaam("Leuven");
+        dto.setAdres("Naamsestraat 100");
+        dto.setAantalParkeerPlaatsen(20);
+
+        // Act + Assert
+        mockMvc.perform(post("/campussen")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.naam", is("Leuven")))
+                .andExpect(jsonPath("$.adres", is("Naamsestraat 100")))
+                .andExpect(jsonPath("$.aantalParkeerplaatsen", is(20)))
+                .andExpect(jsonPath("$.aantalLokalen", is(0))); // bij creatie nog geen lokalen
+    }
+    @Test
+    void postCampus_ZonderNaam_Returns400BadRequest() throws Exception {
+        CampusCreateDTO dto = new CampusCreateDTO();
+        dto.setNaam(""); // Leeg = ongeldig
+        dto.setAdres("Naamsestraat 100");
+        dto.setAantalParkeerPlaatsen(10);
+
+        mockMvc.perform(post("/campussen")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    public void testGetCampusByNaam_returnsCorrectCampus() throws Exception {
-        // 🔎 Voer een GET-verzoek uit naar /campussen/LEUVEN
-        mockMvc.perform(get("/campussen/LEUVEN")
-                        .accept(MediaType.APPLICATION_JSON)) // Verwacht JSON terug
-                .andExpect(status().isOk()) // ✅ Status 200 OK
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON)) // ✅ Inhoudstype JSON
-                .andExpect(jsonPath("$.naam").value("LEUVEN")) // ✅ naam moet "LEUVEN" zijn
-                .andExpect(jsonPath("$.adres").value("Naamsestraat")); // ✅ adres moet correct zijn
-    }
-}
+    void postCampus_ZonderAdres_Returns400BadRequest() throws Exception {
+        CampusCreateDTO dto = new CampusCreateDTO();
+        dto.setNaam("Leuven");
+        dto.setAdres(""); // Leeg = ongeldig
+        dto.setAantalParkeerPlaatsen(10);
 
+        mockMvc.perform(post("/campussen")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+    @Test
+    void postCampus_MetDubbeleNaam_ReturnsConflict() throws Exception {
+        CampusCreateDTO dto = new CampusCreateDTO();
+        dto.setNaam("Hasselt");
+        dto.setAdres("Elfde-Liniestraat 10");
+        dto.setAantalParkeerPlaatsen(30);
+
+        // Eerste POST: succesvol
+        mockMvc.perform(post("/campussen")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated());
+
+        // Tweede POST met exact dezelfde data
+        mockMvc.perform(post("/campussen")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isConflict()); // of isBadRequest() als je dat gebruikt
+    }
+
+}

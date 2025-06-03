@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*; // Voor JPA-annotaties zoals @Entity, @Id, @ManyToOne, enz.
 import jakarta.validation.constraints.*; // Voor validatie: @NotBlank, @Positive, enz.
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity // Deze klasse is een JPA-entiteit, en wordt een tabel in de database
 public class Lokaal {
 
@@ -29,7 +32,7 @@ public class Lokaal {
 
     private int verdieping; // Geen validatie: mag ook negatief zijn (bv. -1 = kelder)
 
-    @ManyToOne // Veel lokalen kunnen bij één campus horen
+    @ManyToOne(fetch = FetchType.EAGER) // Veel lokalen kunnen bij één campus horen
     @JoinColumn(name = "campus_naam") // Foreign key in de tabel die verwijst naar Campus.naam , omdat dit PK is
 
     //@JsonIgnoreProperties("lokalen")
@@ -115,6 +118,16 @@ public class Lokaal {
 
     public void setCampus(Campus campus) {
         this.campus = campus;
+    }
+    @ManyToMany(mappedBy = "lokalen")
+    private Set<Reservatie> reservaties = new HashSet<>();
+
+    public Set<Reservatie> getReservaties() {
+        return reservaties;
+    }
+
+    public void setReservaties(Set<Reservatie> reservaties) {
+        this.reservaties = reservaties;
     }
 }
 

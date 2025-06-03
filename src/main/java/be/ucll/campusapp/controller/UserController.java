@@ -39,6 +39,15 @@ public class UserController {
                 .collect(Collectors.toList());
     }
 
+    @Operation(summary = "Gebruikers zoeken op (deel van) voornaam of achternaam")
+    @GetMapping(params = "nameMatches")
+    public List<UserDTO> searchUsersByNaam(@RequestParam String nameMatches) {
+        return userService.findUsersByVoornaamOfAchternaam(nameMatches)
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
     // GET /gebruikers/{id}
     @Operation(summary = "Gebruiker ophalen op basis van ID")
     @GetMapping("/{id}")
@@ -76,6 +85,16 @@ public class UserController {
                     return ResponseEntity.ok(mapToDTO(updated));
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    @Operation(summary = "Voeg een lokaal toe aan een bestaande reservatie")
+    @PutMapping("/{userId}/reservaties/{reservatieId}/rooms/{roomId}")
+    public ResponseEntity<ReservatieDTO> voegLokaalToeAanReservatie(
+            @PathVariable Long userId,
+            @PathVariable Long reservatieId,
+            @PathVariable Long roomId
+    ) {
+        ReservatieDTO dto = reservatieService.voegLokaalToeAanReservatie(userId, reservatieId, roomId);
+        return ResponseEntity.ok(dto);
     }
 
     // DELETE /gebruikers/{id}

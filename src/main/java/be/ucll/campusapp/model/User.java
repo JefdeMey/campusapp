@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Past;
 import java.time.LocalDate;
 
 @Entity
+@Table(name="app_user")
 public class User {
 
     @Id
@@ -34,9 +35,11 @@ public class User {
     public User() {
     }
 
-    public User(String voornaam, String achternaam) {
+    public User(String voornaam, String achternaam, String mail, LocalDate geboortedatum) {
         this.voornaam = voornaam;
         this.achternaam = achternaam;
+        this.mail = mail;
+        this.geboortedatum = geboortedatum;
     }
 
     // Getters & setters

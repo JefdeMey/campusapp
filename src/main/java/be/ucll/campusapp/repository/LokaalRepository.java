@@ -11,4 +11,5 @@ public interface LokaalRepository extends JpaRepository<Lokaal, Long> {
     Optional<Lokaal> findByCampus_NaamAndNaam(String campusNaam, String lokaalNaam);
     List<Lokaal> findByCampus_Naam(String naam);
     List<Lokaal> findByVerdiepingAndCampus_Naam(int verdieping, String campusNaam);
+    Optional<Lokaal> findByNaam(String naam);
 }

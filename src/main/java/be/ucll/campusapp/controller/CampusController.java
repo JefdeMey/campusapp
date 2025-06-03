@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -71,7 +72,10 @@ public class CampusController {
     @Operation(summary = "Verwijder een campus op basis van een naam")
     @DeleteMapping("/{naam}")
     public ResponseEntity<Void> deleteCampus(@PathVariable String naam) {
-        campusService.deleteCampus(naam);
+        boolean deleted = campusService.deleteCampus(naam);
+        if (!deleted) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.noContent().build();
     }
 
@@ -93,6 +97,18 @@ public class CampusController {
     ) {
         List<ReservatieDTO> reservaties = reservatieService.findByCampusAndLokaalId(campusNaam, roomId);
         return ResponseEntity.ok(reservaties);
+    }
+
+    @Operation(summary = "Geef alle lokalen van een campus, optioneel gefilterd op beschikbaarheid vanaf een tijdstip")
+    @GetMapping("/{campusNaam}/rooms")
+    public ResponseEntity<List<LokaalDTO>> getLokalenVanCampus(
+            @PathVariable String campusNaam,
+            @RequestParam(required = false) LocalDateTime availableFrom,
+            @RequestParam(required = false) LocalDateTime availableUntil,
+            @RequestParam(required = false) Integer minNumberOfSeats
+    ) {
+        List<LokaalDTO> lokalen = campusService.findLokalenMetFilters(campusNaam, availableFrom, availableUntil, minNumberOfSeats);
+        return ResponseEntity.ok(lokalen);
     }
 
 

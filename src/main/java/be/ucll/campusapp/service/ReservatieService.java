@@ -10,7 +10,10 @@ import be.ucll.campusapp.model.User;
 import be.ucll.campusapp.repository.LokaalRepository;
 import be.ucll.campusapp.repository.ReservatieRepository;
 import be.ucll.campusapp.repository.UserRepository;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -58,9 +61,9 @@ public class ReservatieService {
                 throw new IllegalArgumentException("Lokaal met ID " + lokaalId + " is reeds gereserveerd in deze periode.");
             }
         }
-
-        User gebruiker = userRepository.findById(dto.getGebruikerId())
-                .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden"));
+        User gebruiker = userRepository.getReferenceById(dto.getGebruikerId());
+//        User gebruiker = userRepository.findById(dto.getGebruikerId())
+//                .orElseThrow(() -> new IllegalArgumentException("Gebruiker niet gevonden"));
 
         Set<Lokaal> lokalen = fetchLokalen(dto.getLokaalIds());
 
@@ -69,6 +72,7 @@ public class ReservatieService {
         reservatie.setEindTijd(dto.getEindTijd());
         reservatie.setCommentaar(dto.getCommentaar());
         reservatie.setAantalPersonen(dto.getAantalPersonen());
+        System.out.println("➡️ Debug: gebruiker = " + gebruiker.getId() + ", object = " + gebruiker);
         reservatie.setGebruiker(gebruiker);
         reservatie.setLokalen(lokalen);
 
@@ -129,6 +133,10 @@ public class ReservatieService {
     }
 
     public void delete(Long id) {
+        if (!reservatieRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservatie met ID " + id + " bestaat niet.");
+        }
+
         reservatieRepository.deleteById(id);
     }
 
@@ -163,12 +171,12 @@ public class ReservatieService {
         return dto;
     }
 
-//    public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
+    //    public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
 //        return reservatieRepository.findByGebruiker_Id(gebruikerId).stream()
 //                .map(this::mapToDTO)
 //                .collect(Collectors.toList());
 //    }
-public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
+    public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
     return reservatieRepository.findByGebruiker_IdOrderByStartTijdAsc(gebruikerId).stream()
             .map(this::mapToDTO)
             .collect(Collectors.toList());
@@ -190,6 +198,39 @@ public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
 
         List<Reservatie> reservaties = reservatieRepository.findByLokalenContainingOrderByStartTijdAsc(lokaal);
         return reservaties.stream().map(this::mapToDTO).collect(Collectors.toList());
+    }
+    public ReservatieDTO voegLokaalToeAanReservatie(Long userId, Long reservatieId, Long lokaalId) {
+        Reservatie reservatie = reservatieRepository.findById(reservatieId)
+                .orElseThrow(() -> new EntityNotFoundException("Reservatie niet gevonden."));
+
+        if (!reservatie.getGebruiker().getId().equals(userId)) {
+            throw new IllegalArgumentException("Reservatie behoort niet toe aan gebruiker " + userId);
+        }
+
+        Lokaal lokaal = lokaalRepository.findById(lokaalId)
+                .orElseThrow(() -> new EntityNotFoundException("Lokaal niet gevonden."));
+
+        // Check of lokaal al toegevoegd is
+        if (reservatie.getLokalen().contains(lokaal)) {
+            throw new IllegalArgumentException("Lokaal is al gekoppeld aan deze reservatie.");
+        }
+
+        // Check op beschikbaarheid (overlap)
+        List<Reservatie> overlapping = reservatieRepository
+                .findByLokalen_IdAndStartTijdLessThanEqualAndEindTijdGreaterThanEqual(
+                        lokaalId, reservatie.getEindTijd(), reservatie.getStartTijd());
+
+        boolean overlapt = overlapping.stream()
+                .anyMatch(r -> !r.getId().equals(reservatie.getId()));
+
+        if (overlapt) {
+            throw new IllegalArgumentException("Lokaal is reeds gereserveerd in deze periode.");
+        }
+
+        // Alles ok, toevoegen
+        reservatie.getLokalen().add(lokaal);
+        Reservatie updated = reservatieRepository.save(reservatie);
+        return mapToDTO(updated);
     }
 
 }
