@@ -1,31 +1,49 @@
 package be.ucll.campusapp.integration;
 
+import be.ucll.campusapp.dto.CampusCreateDTO;
 import be.ucll.campusapp.model.Campus;
 import be.ucll.campusapp.repository.CampusRepository;
+import be.ucll.campusapp.repository.LokaalRepository;
+import be.ucll.campusapp.repository.ReservatieRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
+//alle functionaliteit en samenwerking tussen lagen wil testen (eind-tot-eind)
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class CampusIntegrationTest {
-
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
-    private CampusRepository campusRepository;
+    private ObjectMapper objectMapper;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private ReservatieRepository reservatieRepository;
+
+    @Autowired
+    private LokaalRepository lokaalRepository;
+
+    @Autowired
+    private CampusRepository campusRepository;
+
+    @BeforeEach
+    void setup() {
+        reservatieRepository.deleteAll(); // eerst de koppelingen (kind)
+        lokaalRepository.deleteAll();     // dan het lokaal (ouder)
+        campusRepository.deleteAll();     // dan de campus
+    }
 
     @Test
     void testGetAllCampussen_returnsOk() throws Exception {
@@ -40,14 +58,24 @@ class CampusIntegrationTest {
 
     @Test
     void testPostCampus_createsNewCampus() throws Exception {
-        Campus nieuw = new Campus("DIEST", "Stationsstraat", 20);
+        // Maak een CampusCreateDTO als een Java Map, of als aparte DTO-klasse als je constructor hebt
+        String campusJson = """
+            {
+              "naam": "DIEST",
+              "adres": "Stationsstraat",
+              "aantalParkeerPlaatsen": 20
+            }
+            """;
 
         mockMvc.perform(post("/campussen")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(nieuw)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.naam").value("DIEST"));
+                        .content(campusJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.naam").value("DIEST"))
+                .andExpect(jsonPath("$.adres").value("Stationsstraat"))
+                .andExpect(jsonPath("$.aantalParkeerplaatsen").value(20));
     }
+
     @Test
     void testGetCampusByNaam_returnsCorrectCampus() throws Exception {
         campusRepository.deleteAll(); // zorg voor een schone slate
@@ -74,7 +102,10 @@ class CampusIntegrationTest {
         campusRepository.deleteAll();
         campusRepository.save(new Campus("DIEST", "Stationsstraat", 20));
 
-        Campus update = new Campus("DIEST", "Nieuwstraat", 55);
+        CampusCreateDTO update = new CampusCreateDTO();
+        update.setNaam("DIEST");
+        update.setAdres("Nieuwstraat");
+        update.setAantalParkeerPlaatsen(55);
 
         mockMvc.perform(put("/campussen/DIEST")
                         .contentType(MediaType.APPLICATION_JSON)

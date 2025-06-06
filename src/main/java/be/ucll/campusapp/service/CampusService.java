@@ -34,6 +34,10 @@ public class CampusService {
     }
 
     public Campus create(CampusCreateDTO dto) {
+        if (campusRepository.existsByNaam(dto.getNaam())) {
+            throw new IllegalArgumentException("Campus met deze naam bestaat al.");
+        }
+
         Campus campus = new Campus();
         campus.setNaam(dto.getNaam());
         campus.setAdres(dto.getAdres());

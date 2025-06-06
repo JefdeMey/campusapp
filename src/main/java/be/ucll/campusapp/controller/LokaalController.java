@@ -64,6 +64,7 @@ public class LokaalController {
         Lokaal lokaal = lokaalService.create(campusId, dto);
         return new ResponseEntity<>(mapToDTO(lokaal), HttpStatus.CREATED);
     }
+
     @Operation(summary = "Pas een lokaal aan op basis van ID")
     @PutMapping("/{id}")
     public ResponseEntity<LokaalDTO> updateLokaal(@PathVariable Long id, @Valid @RequestBody LokaalCreateDTO dto) {

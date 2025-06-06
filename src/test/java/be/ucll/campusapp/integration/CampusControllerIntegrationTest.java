@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
+//validatie en gedrag van de controller test
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test") // gebruikt application-test.properties
@@ -89,7 +89,7 @@ class CampusControllerIntegrationTest {
         mockMvc.perform(post("/campussen")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isConflict()); // of isBadRequest() als je dat gebruikt
+                .andExpect(status().isBadRequest()); // of isBadRequest() als je dat gebruikt
     }
 
 }
