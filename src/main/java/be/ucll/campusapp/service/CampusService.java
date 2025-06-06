@@ -14,33 +14,23 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@Service // Zorgt ervoor dat Spring deze klasse herkent als service-component
+@Service
 public class CampusService {
 
     private final CampusRepository campusRepository;
     private final LokaalRepository lokaalRepository;
 
-// dependency injection via de ctor
     public CampusService(CampusRepository campusRepository, LokaalRepository lokaalRepository) {
-
         this.campusRepository = campusRepository;
         this.lokaalRepository = lokaalRepository;
     }
 
-    // Geef alle campussen terug
     public List<Campus> findAllCampussen() {
         return campusRepository.findAll();
     }
 
-    // Geef één campus op naam
-    //
     public Optional<Campus> findCampusByNaam(String naam) {
         return campusRepository.findById(naam);
-    }
-
-    // Sla een campus op (insert of update)
-    public Campus saveCampus(Campus campus) {
-        return campusRepository.save(campus);
     }
 
     public Campus create(CampusCreateDTO dto) {
@@ -51,8 +41,16 @@ public class CampusService {
         return campusRepository.save(campus);
     }
 
+    public boolean deleteCampus(String naam) {
+        Optional<Campus> campus = campusRepository.findById(naam);
+        if (campus.isEmpty()) {
+            return false;
+        }
+        campusRepository.delete(campus.get());
+        return true;
+    }
+
     public Campus updateCampus(String naam, CampusCreateDTO dto) {
-        System.out.println("Inkomende waarde parkeerplaatsen: " + dto.getAantalParkeerPlaatsen());
         Campus existing = campusRepository.findById(naam)
                 .orElseThrow(() -> new EntityNotFoundException("Campus '" + naam + "' werd niet gevonden."));
 
@@ -60,16 +58,6 @@ public class CampusService {
         existing.setAantalParkeerplaatsen(dto.getAantalParkeerPlaatsen());
 
         return campusRepository.save(existing);
-    }
-
-    // Verwijder een campus
-    public boolean deleteCampus(String naam) {
-        Optional<Campus> campus = campusRepository.findById(naam); // of findByNaam(naam) indien nodig
-        if (campus.isEmpty()) {
-            return false;
-        }
-        campusRepository.delete(campus.get());
-        return true;
     }
 
     public Campus getCampusByNaamOrThrow(String naam) {
@@ -98,6 +86,7 @@ public class CampusService {
                 .map(this::mapToDTO)
                 .toList();
     }
+
     private boolean beschikbaarVanaf(Lokaal lokaal, LocalDateTime tijdstip) {
         if (tijdstip == null) return true;
         return lokaal.getReservaties().stream()
@@ -110,22 +99,10 @@ public class CampusService {
                 .noneMatch(r -> !r.getStartTijd().isAfter(tijdstip));
     }
 
-//    private boolean beschikbaarVanaf(Lokaal lokaal, LocalDateTime tijdstip) {
-//        return lokaal.getReservaties().stream()
-//                .noneMatch(r -> !r.getEindTijd().isBefore(tijdstip));
-//    }
-//
-//    private boolean beschikbaarTot(Lokaal lokaal, LocalDateTime tijdstip) {
-//        if (tijdstip == null) return true;
-//        return lokaal.getReservaties().stream()
-//                .noneMatch(r -> !r.getStartTijd().isAfter(tijdstip));
-//    }
-
     private boolean heeftMinAantalZitplaatsen(Lokaal lokaal, Integer minAantal) {
         if (minAantal == null) return true;
         return lokaal.getAantalPersonen() >= minAantal;
     }
-
 
     private LokaalDTO mapToDTO(Lokaal lokaal) {
         LokaalDTO dto = new LokaalDTO();

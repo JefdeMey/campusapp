@@ -46,6 +46,7 @@ public class LokaalController {
         return lokaal.map(value -> ResponseEntity.ok(mapToDTO(value)))
                 .orElse(ResponseEntity.notFound().build());
     }
+
     @Operation(summary = "Toon lokaalid op naam")
     @GetMapping("/naam/{naam}")
     public ResponseEntity<Long> getIdByNaam(@PathVariable String naam) {
@@ -73,6 +74,7 @@ public class LokaalController {
             return ResponseEntity.notFound().build();
         }
     }
+
     @Operation(summary = "Verwijder een lokaal op basis van ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLokaal(@PathVariable Long id) {
@@ -80,7 +82,6 @@ public class LokaalController {
         return ResponseEntity.noContent().build();
     }
 
-    // Mapping van entiteit naar DTO
     private LokaalDTO mapToDTO(Lokaal lokaal) {
         LokaalDTO dto = new LokaalDTO();
         dto.setId(lokaal.getId());

@@ -11,30 +11,21 @@ import java.time.LocalDate;
 @Entity
 @Table(name="app_user")
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @NotBlank(message = "Voornaam mag niet leeg zijn")
     private String voornaam;
-
     @NotBlank(message = "Achternaam mag niet leeg zijn")
     private String achternaam;
-
     @NotBlank(message = "E-mailadres is verplicht.")
     @Email(message = "Ongeldig e-mailadres.")
     private String mail;
-
     @NotNull(message = "Geboortedatum is verplicht.")
     @Past(message = "Geboortedatum moet in het verleden liggen.")
     private LocalDate geboortedatum;
 
-    // Je kunt ook loginnaam/email toevoegen als je dat wenst
-
-    public User() {
-    }
-
+    public User() {}
     public User(String voornaam, String achternaam, String mail, LocalDate geboortedatum) {
         this.voornaam = voornaam;
         this.achternaam = achternaam;
@@ -42,38 +33,27 @@ public class User {
         this.geboortedatum = geboortedatum;
     }
 
-    // Getters & setters
-
     public Long getId() {
         return id;
     }
-
     public void setId(Long id) {
         this.id = id;
     }
-
     public String getVoornaam() {
         return voornaam;
     }
-
     public void setVoornaam(String voornaam) {
         this.voornaam = voornaam;
     }
-
     public String getAchternaam() {
         return achternaam;
     }
-
     public void setAchternaam(String achternaam) {
         this.achternaam = achternaam;
     }
-
     public String getMail() { return mail; }
-
     public void setMail(String mail) { this.mail = mail; }
-
     public LocalDate getGeboortedatum() { return geboortedatum; }
-
     public void setGeboortedatum(LocalDate geboortedatum) { this.geboortedatum = geboortedatum; }
 }
 

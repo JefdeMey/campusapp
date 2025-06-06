@@ -23,14 +23,12 @@ public class ReservatieController {
         this.reservatieService = reservatieService;
     }
 
-    // GET /reservaties
     @Operation(summary = "Alle reservaties ophalen")
     @GetMapping
     public List<ReservatieDTO> getAll() {
         return reservatieService.getAll();
     }
 
-    // GET /reservaties/{id}
     @Operation(summary = "Eén reservatie ophalen op basis van ID")
     @GetMapping("/{id}")
     public ResponseEntity<ReservatieDTO> getById(@PathVariable Long id) {
@@ -39,22 +37,13 @@ public class ReservatieController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST /reservaties
     @Operation(summary = "Nieuwe reservatie aanmaken")
     @PostMapping
     public ResponseEntity<ReservatieDTO> create(@Valid @RequestBody ReservatieCreateDTO dto) {
-        System.out.println("➡️ Gebruiker-ID ontvangen van client: " + dto.getGebruikerId());
-        System.out.println("🚀 Ontvangen DTO:");
-        System.out.println("Gebruiker ID: " + dto.getGebruikerId());
-        System.out.println("Aantal personen: " + dto.getAantalPersonen());
-        System.out.println("Lokalen: " + dto.getLokaalIds());
-        System.out.println("Start: " + dto.getStartTijd());
-        System.out.println("Einde: " + dto.getEindTijd());
         ReservatieDTO created = reservatieService.create(dto);
         return ResponseEntity.ok(created);
     }
 
-    // PUT /reservaties/{id}
     @Operation(summary = "Reservatie bijwerken op basis van ID")
     @PutMapping("/{id}")
     public ResponseEntity<ReservatieDTO> update(@PathVariable Long id, @Valid @RequestBody ReservatieUpdateDTO dto) {
@@ -63,7 +52,6 @@ public class ReservatieController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // DELETE /reservaties/{id}
     @Operation(summary = "Reservatie verwijderen op basis van ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

@@ -140,14 +140,12 @@ public class ReservatieService {
         reservatieRepository.deleteById(id);
     }
 
-    // Helper: validatie start < eind
     private void validatePeriode(LocalDateTime start, LocalDateTime eind) {
         if (!start.isBefore(eind)) {
             throw new IllegalArgumentException("Starttijd moet vóór de eindtijd liggen.");
         }
     }
 
-    // Helper: lokaalIds ophalen en mappen
     private Set<Lokaal> fetchLokalen(List<Long> ids) {
         List<Lokaal> lokalen = lokaalRepository.findAllById(ids);
         if (lokalen.size() != ids.size()) {
@@ -156,7 +154,6 @@ public class ReservatieService {
         return new HashSet<>(lokalen);
     }
 
-    // Mapping naar DTO
     private ReservatieDTO mapToDTO(Reservatie r) {
         ReservatieDTO dto = new ReservatieDTO();
         dto.setId(r.getId());
@@ -171,11 +168,6 @@ public class ReservatieService {
         return dto;
     }
 
-    //    public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
-//        return reservatieRepository.findByGebruiker_Id(gebruikerId).stream()
-//                .map(this::mapToDTO)
-//                .collect(Collectors.toList());
-//    }
     public List<ReservatieDTO> findByGebruikerId(Long gebruikerId) {
     return reservatieRepository.findByGebruiker_IdOrderByStartTijdAsc(gebruikerId).stream()
             .map(this::mapToDTO)

@@ -30,7 +30,6 @@ public class UserController {
         this.reservatieService = reservatieService;
     }
 
-    // GET /gebruikers
     @Operation(summary = "Alle gebruikers ophalen")
     @GetMapping
     public List<UserDTO> getAllUsers() {
@@ -48,7 +47,6 @@ public class UserController {
                 .toList();
     }
 
-    // GET /gebruikers/{id}
     @Operation(summary = "Gebruiker ophalen op basis van ID")
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
@@ -57,7 +55,6 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // POST /gebruikers
     @Operation(summary = "Nieuwe gebruiker aanmaken")
     @PostMapping
     public ResponseEntity<UserDTO> addUser(@Valid @RequestBody UserCreateDTO dto) {
@@ -71,7 +68,6 @@ public class UserController {
         return ResponseEntity.ok(mapToDTO(saved));
     }
 
-    // PUT /gebruikers/{id}
     @Operation(summary = "Gebruiker bijwerken op basis van ID")
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateDTO dto) {
@@ -86,18 +82,14 @@ public class UserController {
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
     @Operation(summary = "Voeg een lokaal toe aan een bestaande reservatie")
     @PutMapping("/{userId}/reservaties/{reservatieId}/rooms/{roomId}")
-    public ResponseEntity<ReservatieDTO> voegLokaalToeAanReservatie(
-            @PathVariable Long userId,
-            @PathVariable Long reservatieId,
-            @PathVariable Long roomId
-    ) {
+    public ResponseEntity<ReservatieDTO> voegLokaalToeAanReservatie( @PathVariable Long userId, @PathVariable Long reservatieId, @PathVariable Long roomId ) {
         ReservatieDTO dto = reservatieService.voegLokaalToeAanReservatie(userId, reservatieId, roomId);
         return ResponseEntity.ok(dto);
     }
 
-    // DELETE /gebruikers/{id}
     @Operation(summary = "Gebruiker verwijderen op basis van ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
@@ -105,7 +97,6 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    // Mapping van model naar DTO
     private UserDTO mapToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
@@ -116,8 +107,6 @@ public class UserController {
         return dto;
     }
 
-
-    //haal de reservaties van een gebruiker op
     @Operation(summary = "Alle reservaties van een gebruiker ophalen")
     @GetMapping("/{id}/reservaties")
     public ResponseEntity<List<ReservatieDTO>> getReservatiesForUser(@PathVariable Long id) {

@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+// Deze testdata is bedoeld voor demo- en testdoeleinden tijdens de evaluatie (als de db leeg zou zijn)
 @Component
 public class DataInitializer implements CommandLineRunner {
 

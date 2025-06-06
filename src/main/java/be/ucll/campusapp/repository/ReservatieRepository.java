@@ -11,7 +11,6 @@ public interface ReservatieRepository extends JpaRepository<Reservatie, Long> {
 
     List<Reservatie> findByLokalen_Id(Long lokaalId);
 
-    // Optioneel: alle reservaties op een bepaald moment (bijv. voor overlapcontrole)
     List<Reservatie> findByLokalen_IdAndStartTijdLessThanEqualAndEindTijdGreaterThanEqual(
             Long lokaalId, LocalDateTime eind, LocalDateTime start
     );

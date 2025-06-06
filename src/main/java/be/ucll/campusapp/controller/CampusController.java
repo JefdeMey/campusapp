@@ -30,7 +30,6 @@ public class CampusController {
     private final CampusService campusService;
     private final ReservatieService reservatieService;
 
-
     public CampusController(CampusService campusService, ReservatieService reservatieService) {
         this.campusService = campusService;
         this.reservatieService = reservatieService;
@@ -52,6 +51,7 @@ public class CampusController {
         return campus.map(value -> ResponseEntity.ok(mapToDTO(value)))
                 .orElseThrow(() -> new EntityNotFoundException("Campus '" + naam + "' werd niet gevonden."));
     }
+
     @Operation(summary = "Toon één lokaal binnen een campus")
     @GetMapping("/{campusNaam}/rooms/{roomId}")
     public ResponseEntity<LokaalDTO> getLokaalBinnenCampus(
@@ -74,6 +74,7 @@ public class CampusController {
     public ResponseEntity<Void> deleteCampus(@PathVariable String naam) {
         boolean deleted = campusService.deleteCampus(naam);
         if (!deleted) {
+            System.out.println("Campus werd niet gevonden");
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
@@ -89,30 +90,21 @@ public class CampusController {
             return ResponseEntity.notFound().build();
         }
     }
+
     @Operation(summary = "Alle reservaties ophalen voor een lokaal binnen een campus")
     @GetMapping("/{campusNaam}/rooms/{roomId}/reservaties")
-    public ResponseEntity<List<ReservatieDTO>> getReservatiesForLokaal(
-            @PathVariable String campusNaam,
-            @PathVariable Long roomId
-    ) {
+    public ResponseEntity<List<ReservatieDTO>> getReservatiesForLokaal( @PathVariable String campusNaam, @PathVariable Long roomId) {
         List<ReservatieDTO> reservaties = reservatieService.findByCampusAndLokaalId(campusNaam, roomId);
         return ResponseEntity.ok(reservaties);
     }
 
     @Operation(summary = "Geef alle lokalen van een campus, optioneel gefilterd op beschikbaarheid vanaf een tijdstip")
     @GetMapping("/{campusNaam}/rooms")
-    public ResponseEntity<List<LokaalDTO>> getLokalenVanCampus(
-            @PathVariable String campusNaam,
-            @RequestParam(required = false) LocalDateTime availableFrom,
-            @RequestParam(required = false) LocalDateTime availableUntil,
-            @RequestParam(required = false) Integer minNumberOfSeats
-    ) {
+    public ResponseEntity<List<LokaalDTO>> getLokalenVanCampus( @PathVariable String campusNaam, @RequestParam(required = false) LocalDateTime availableFrom, @RequestParam(required = false) LocalDateTime availableUntil, @RequestParam(required = false) Integer minNumberOfSeats) {
         List<LokaalDTO> lokalen = campusService.findLokalenMetFilters(campusNaam, availableFrom, availableUntil, minNumberOfSeats);
         return ResponseEntity.ok(lokalen);
     }
 
-
-    // Mapping van Campus naar DTO
     private CampusDTO mapToDTO(Campus campus) {
         CampusDTO dto = new CampusDTO();
         dto.setNaam(campus.getNaam());
@@ -121,6 +113,7 @@ public class CampusController {
         dto.setAantalLokalen(campus.getLokalen() != null ? campus.getLokalen().size() : 0);
         return dto;
     }
+
     private LokaalDTO mapToLokaalDTO(Lokaal lokaal) {
         LokaalDTO dto = new LokaalDTO();
         dto.setId(lokaal.getId());
